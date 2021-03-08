@@ -1,0 +1,5 @@
+{
+  "app": "sbt infrastructure/run",
+  "context": {
+  }
+}
