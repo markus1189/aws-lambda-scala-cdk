@@ -23,16 +23,10 @@ object CdkMain extends scala.App {
 
   new App()
     .tap { app =>
-      val firstLambda = new FirstLambdaStack(
-        app,
-        "first-lambda",
-        StackProps
-          .builder()
-          .env(
-            environment
-          )
-          .build()
-      )
+      val props = StackProps.builder().env(environment).build()
+
+      val firstLambda = new FirstLambdaStack(app, "first-lambda", props)
+      val snsSqsLambda = new SnsSqsLambdaStack(app, "sns-sqs-lambda", props)
     }
     .synth()
 }

@@ -20,15 +20,27 @@ lazy val commonAssemblySettings = List(assemblyMergeStrategy in assembly := {
 })
 
 lazy val firstLambdaJarName = "first-lambda.jar"
-
 lazy val `first-lambda` = (project in file("first-lambda"))
   .settings(
     name := "FirstLambda",
     libraryDependencies ++= List(
+      "com.amazonaws" % "aws-lambda-java-core" % versions.awsLambdaCore
+    ),
+    assemblyJarName in assembly := firstLambdaJarName
+  )
+  .settings(commonAssemblySettings: _*)
+  .settings(commonSettings)
+  .enablePlugins(BuildInfoPlugin)
+
+lazy val snsSqsLambdaJarName = "sns-sqs-lambda.jar"
+lazy val `sns-sqs-lambda` = (project in file("sns-sqs-lambda"))
+  .settings(
+    name := "SnsSqsLambda",
+    libraryDependencies ++= List(
       "com.amazonaws" % "aws-lambda-java-core" % versions.awsLambdaCore,
       "com.amazonaws" % "aws-lambda-java-events" % versions.awsLambdaEvents
     ),
-    assemblyJarName in assembly := firstLambdaJarName
+    assemblyJarName in assembly := snsSqsLambdaJarName
   )
   .settings(commonAssemblySettings: _*)
   .settings(commonSettings)
@@ -39,12 +51,17 @@ lazy val infrastructure = (project in file("infrastructure"))
     name := "Infrastructure",
     libraryDependencies ++= List(
       "software.amazon.awscdk" % "core" % versions.awsCdk,
-      "software.amazon.awscdk" % "lambda" % versions.awsCdk
+      "software.amazon.awscdk" % "lambda" % versions.awsCdk,
+      "software.amazon.awscdk" % "lambda-event-sources" % versions.awsCdk,
+      "software.amazon.awscdk" % "sqs" % versions.awsCdk,
+      "software.amazon.awscdk" % "sns" % versions.awsCdk,
+      "software.amazon.awscdk" % "sns-subscriptions" % versions.awsCdk
     ),
     (Compile / compile) := (Compile / compile)
       .dependsOn(
-        `first-lambda` / assembly
-      ) // make sure the lambda is up-to-date when running cdk
+        `first-lambda` / assembly,
+        `sns-sqs-lambda` / assembly
+      ) // make sure the lambdas are up-to-date when running cdk
       .value
   )
   .settings(commonSettings)
@@ -53,8 +70,16 @@ lazy val infrastructure = (project in file("infrastructure"))
     buildInfoKeys ++= List[BuildInfoKey](
       BuildInfoKey("firstLambdaJarName", firstLambdaJarName),
       BuildInfoKey("firstLambdaDir", "first-lambda"),
-      BuildInfoKey("firstLambdaHandler", "de.codecentric.FirstLambda::handleRequest")
+      BuildInfoKey(
+        "firstLambdaHandler",
+        "de.codecentric.FirstLambda::handleRequest"
+      ),
+      BuildInfoKey("snsSqsLambdaJarName", snsSqsLambdaJarName),
+      BuildInfoKey("snsSqsLambdaDir", "sns-sqs-lambda"),
+      BuildInfoKey(
+        "snsSqsLambdaHandler",
+        "de.codecentric.SnsSqsLambda::handleRequest"
+      )
     ),
     buildInfoPackage := "de.codecentric"
   )
-
